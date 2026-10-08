@@ -1,0 +1,43 @@
+/**
+ * Scan Payment Upload Foundation Styles (Phase 2 UI)
+ */
+.upload-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: var(--radius-lg);
+  padding: 3.5rem 2rem;
+  text-align: center;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.upload-dropzone:hover, .upload-dropzone.dragover {
+  border-color: var(--primary-color);
+  background-color: #f5f3ff;
+}
+
+.upload-icon {
+  font-size: 3.5rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.image-preview-container {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.image-preview-box {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  background: #f8fafc;
+}
+
+.image-preview-box img {
+  max-height: 380px;
+  width: 100%;
+  object-fit: contain;
+  display: block;
+}

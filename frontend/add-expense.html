@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Expense - Smart Expense Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="app-sidebar" id="appSidebar">
+      <a href="/frontend/dashboard.html" class="sidebar-brand">
+        <i class="bi bi-wallet2 me-2"></i>
+        <span>Smart Expense</span>
+      </a>
+
+      <nav class="sidebar-menu">
+        <a href="/frontend/dashboard.html" class="sidebar-nav-link">
+          <i class="bi bi-speedometer2"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="/frontend/expenses.html" class="sidebar-nav-link">
+          <i class="bi bi-receipt"></i>
+          <span>Expenses</span>
+        </a>
+        <a href="/frontend/add-expense.html" class="sidebar-nav-link active">
+          <i class="bi bi-plus-circle"></i>
+          <span>Add Expense</span>
+        </a>
+        <a href="/frontend/scan-payment.html" class="sidebar-nav-link">
+          <i class="bi bi-qr-code-scan"></i>
+          <span>Scan Payment</span>
+        </a>
+        <a href="/frontend/reports.html" class="sidebar-nav-link">
+          <i class="bi bi-bar-chart-line"></i>
+          <span>Reports</span>
+        </a>
+        <a href="/frontend/profile.html" class="sidebar-nav-link">
+          <i class="bi bi-person-circle"></i>
+          <span>Profile</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="overflow-hidden me-2">
+            <div class="fw-semibold small text-truncate user-display-name">User</div>
+            <div class="text-muted smaller text-truncate user-display-email" style="font-size: 0.75rem;">user@example.com</div>
+          </div>
+          <button class="btn btn-sm btn-outline-danger btn-logout" title="Sign Out">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Main Content -->
+    <main class="app-main">
+      <header class="app-navbar">
+        <div class="d-flex align-items-center">
+          <button class="btn btn-sm btn-outline-secondary d-lg-none me-2" id="sidebarToggle" aria-label="Toggle Navigation">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <h5 class="mb-0 fw-bold">Manual Add Expense</h5>
+        </div>
+      </header>
+
+      <div class="app-content">
+        <div class="row justify-content-center">
+          <div class="col-12 col-lg-8">
+            <div class="app-card p-4">
+              <div id="addExpenseAlert"></div>
+
+              <form id="addExpenseForm" novalidate>
+                <div class="row g-3">
+                  <!-- Amount -->
+                  <div class="col-12 col-md-6">
+                    <label for="amount" class="form-label fw-medium">Amount (₹) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-light fw-bold text-muted">₹</span>
+                      <input type="number" step="0.01" min="0.01" class="form-control" id="amount" placeholder="0.00" required>
+                    </div>
+                  </div>
+
+                  <!-- Merchant -->
+                  <div class="col-12 col-md-6">
+                    <label for="merchantName" class="form-label fw-medium">Merchant / Product <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="merchantName" placeholder="e.g. Swiggy, Uber, Amazon" required>
+                  </div>
+
+                  <!-- Category -->
+                  <div class="col-12 col-md-6">
+                    <label for="categorySelect" class="form-label fw-medium">Category</label>
+                    <select class="form-select" id="categorySelect">
+                      <option value="">Select Category</option>
+                    </select>
+                  </div>
+
+                  <!-- Payment Method -->
+                  <div class="col-12 col-md-6">
+                    <label for="paymentMethod" class="form-label fw-medium">Payment Method</label>
+                    <select class="form-select" id="paymentMethod">
+                      <option value="Google Pay / UPI" selected>Google Pay / UPI</option>
+                      <option value="Google Pay">Google Pay</option>
+                      <option value="PhonePe">PhonePe</option>
+                      <option value="Paytm">Paytm</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Card">Card</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <!-- Date -->
+                  <div class="col-12 col-md-6">
+                    <label for="expenseDate" class="form-label fw-medium">Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="expenseDate" required>
+                  </div>
+
+                  <!-- Time -->
+                  <div class="col-12 col-md-6">
+                    <label for="expenseTime" class="form-label fw-medium">Time (Optional)</label>
+                    <input type="time" class="form-control" id="expenseTime">
+                  </div>
+
+                  <!-- Description / Notes -->
+                  <div class="col-12">
+                    <label for="description" class="form-label fw-medium">Description / Notes</label>
+                    <textarea class="form-control" id="description" rows="3" placeholder="Optional details, invoice reference or bill items..."></textarea>
+                  </div>
+
+                  <!-- Buttons -->
+                  <div class="col-12 d-flex justify-content-end gap-2 mt-4">
+                    <a href="/frontend/expenses.html" class="btn btn-outline-secondary px-4">Cancel</a>
+                    <button type="submit" id="saveExpenseBtn" class="btn btn-primary px-4">
+                      Save Expense
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/config.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Auth.requireAuth()) return;
+
+      const dateInput = document.getElementById('expenseDate');
+      const timeInput = document.getElementById('expenseTime');
+      const categorySelect = document.getElementById('categorySelect');
+      const form = document.getElementById('addExpenseForm');
+      const saveBtn = document.getElementById('saveExpenseBtn');
+      const alertId = 'addExpenseAlert';
+
+      // Default date & time to now
+      const now = new Date();
+      dateInput.value = now.toISOString().split('T')[0];
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      timeInput.value = `${hours}:${minutes}`;
+
+      // Populate Categories
+      try {
+        const res = await API.get(CONFIG.ENDPOINTS.CATEGORIES);
+        if (res.ok && res.data.results) {
+          res.data.results.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            categorySelect.appendChild(opt);
+          });
+        }
+      } catch (e) {
+        console.error('Error fetching categories:', e);
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        Common.clearAlert(alertId);
+
+        const amount = document.getElementById('amount').value;
+        const merchant = document.getElementById('merchantName').value.trim();
+        const categoryId = categorySelect.value || null;
+        const paymentMethod = document.getElementById('paymentMethod').value;
+        const expenseDate = dateInput.value;
+        const expenseTime = timeInput.value || null;
+        const description = document.getElementById('description').value.trim();
+
+        if (!amount || Number(amount) <= 0) {
+          Common.showAlert(alertId, 'Amount must be greater than 0.');
+          return;
+        }
+
+        if (!merchant) {
+          Common.showAlert(alertId, 'Merchant name is required.');
+          return;
+        }
+
+        if (!expenseDate) {
+          Common.showAlert(alertId, 'Expense date is required.');
+          return;
+        }
+
+        const originalText = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+        try {
+          const payload = {
+            amount: parseFloat(amount),
+            merchant_name: merchant,
+            category_id: categoryId ? parseInt(categoryId) : null,
+            payment_method: paymentMethod,
+            expense_date: expenseDate,
+            expense_time: expenseTime,
+            description: description,
+            source: 'Manual'
+          };
+
+          const res = await API.post(CONFIG.ENDPOINTS.EXPENSES, payload);
+          if (res.ok) {
+            window.location.href = '/frontend/expenses.html';
+          } else {
+            Common.showAlert(alertId, res.error || 'Failed to save expense.');
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+          }
+        } catch (err) {
+          Common.showAlert(alertId, 'An error occurred while creating the expense.');
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalText;
+        }
+      });
+    });
+
+    // Responsive sidebar toggle
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('appSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+
+    if (toggleBtn && sidebar && backdrop) {
+      toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('show');
+        backdrop.classList.toggle('show');
+      });
+      backdrop.addEventListener('click', () => {
+        sidebar.classList.remove('show');
+        backdrop.classList.remove('show');
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports - Smart Expense Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="app-sidebar" id="appSidebar">
+      <a href="/frontend/dashboard.html" class="sidebar-brand">
+        <i class="bi bi-wallet2 me-2"></i>
+        <span>Smart Expense</span>
+      </a>
+
+      <nav class="sidebar-menu">
+        <a href="/frontend/dashboard.html" class="sidebar-nav-link">
+          <i class="bi bi-speedometer2"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="/frontend/expenses.html" class="sidebar-nav-link">
+          <i class="bi bi-receipt"></i>
+          <span>Expenses</span>
+        </a>
+        <a href="/frontend/add-expense.html" class="sidebar-nav-link">
+          <i class="bi bi-plus-circle"></i>
+          <span>Add Expense</span>
+        </a>
+        <a href="/frontend/scan-payment.html" class="sidebar-nav-link">
+          <i class="bi bi-qr-code-scan"></i>
+          <span>Scan Payment</span>
+        </a>
+        <a href="/frontend/reports.html" class="sidebar-nav-link active">
+          <i class="bi bi-bar-chart-line"></i>
+          <span>Reports</span>
+        </a>
+        <a href="/frontend/profile.html" class="sidebar-nav-link">
+          <i class="bi bi-person-circle"></i>
+          <span>Profile</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="overflow-hidden me-2">
+            <div class="fw-semibold small text-truncate user-display-name">User</div>
+            <div class="text-muted smaller text-truncate user-display-email" style="font-size: 0.75rem;">user@example.com</div>
+          </div>
+          <button class="btn btn-sm btn-outline-danger btn-logout" title="Sign Out">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+      <header class="app-navbar">
+        <div class="d-flex align-items-center">
+          <button class="btn btn-sm btn-outline-secondary d-lg-none me-2" id="sidebarToggle" aria-label="Toggle Navigation">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <h5 class="mb-0 fw-bold">Spending Reports</h5>
+        </div>
+        <div>
+          <button type="button" class="btn btn-sm btn-outline-success" id="exportCsvBtn">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+          </button>
+        </div>
+      </header>
+
+      <div class="app-content">
+        <!-- Controls Bar -->
+        <div class="app-card p-3 mb-4">
+          <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-semibold text-muted mb-1">Time Period</label>
+              <select id="reportPeriodSelect" class="form-select form-select-sm">
+                <option value="monthly" selected>This Month</option>
+                <option value="weekly">Past 7 Days</option>
+                <option value="daily">Today</option>
+                <option value="custom">Custom Date Range</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-8 d-none" id="customDateRangeBox">
+              <div class="row g-2 align-items-end">
+                <div class="col-5">
+                  <label class="form-label small fw-semibold text-muted mb-1">From Date</label>
+                  <input type="date" id="reportDateFrom" class="form-control form-control-sm">
+                </div>
+                <div class="col-5">
+                  <label class="form-label small fw-semibold text-muted mb-1">To Date</label>
+                  <input type="date" id="reportDateTo" class="form-control form-control-sm">
+                </div>
+                <div class="col-2">
+                  <button type="button" id="applyCustomRangeBtn" class="btn btn-sm btn-primary w-100">Apply</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-lg-3">
+            <div class="app-card metric-card">
+              <div>
+                <p class="metric-label">Total Spending</p>
+                <h4 class="metric-value" id="reportTotalSpending">₹0.00</h4>
+              </div>
+              <div class="metric-icon-box primary">
+                <i class="bi bi-wallet2"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-6 col-lg-3">
+            <div class="app-card metric-card">
+              <div>
+                <p class="metric-label">Transactions</p>
+                <h4 class="metric-value" id="reportTransactionCount">0</h4>
+              </div>
+              <div class="metric-icon-box success">
+                <i class="bi bi-receipt"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-6 col-lg-3">
+            <div class="app-card metric-card">
+              <div>
+                <p class="metric-label">Average Expense</p>
+                <h4 class="metric-value" id="reportAverageExpense">₹0.00</h4>
+              </div>
+              <div class="metric-icon-box warning">
+                <i class="bi bi-calculator"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-6 col-lg-3">
+            <div class="app-card metric-card">
+              <div>
+                <p class="metric-label">Highest Expense</p>
+                <h4 class="metric-value" id="reportHighestExpense">₹0.00</h4>
+              </div>
+              <div class="metric-icon-box danger">
+                <i class="bi bi-arrow-up-right"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="reportEmptyState" class="app-card text-center py-5 mb-4 d-none">
+          <i class="bi bi-calendar-x fs-1 text-muted opacity-50 mb-2 d-block"></i>
+          <h6 class="fw-bold text-secondary">No transactions in this period</h6>
+          <p class="text-muted small">Select another time period or add new expenses.</p>
+        </div>
+
+        <!-- Charts and Table Grid -->
+        <div class="row g-4 mb-4">
+          <!-- Category Spending Doughnut -->
+          <div class="col-12 col-lg-5">
+            <div class="app-card p-3 h-100">
+              <h6 class="fw-bold mb-3">Category Distribution</h6>
+              <div style="position: relative; height: 260px;">
+                <canvas id="reportCategoryChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category Breakdown Table -->
+          <div class="col-12 col-lg-7">
+            <div class="app-card p-3 h-100">
+              <h6 class="fw-bold mb-3">Category Spending Breakdown</h6>
+              <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Total Amount</th>
+                      <th>Count</th>
+                      <th>Share</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportCategoryTableBody">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Period Expenses Table -->
+        <div class="app-card p-3">
+          <h6 class="fw-bold mb-3">Transactions in Period</h6>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Merchant / Receiver</th>
+                  <th>Amount</th>
+                  <th>Category</th>
+                  <th>Payment Method</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody id="reportExpensesTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="/frontend/js/config.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/common.js"></script>
+  <script src="/frontend/js/reports.js"></script>
+  <script>
+    // Responsive sidebar toggle
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('appSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+
+    if (toggleBtn && sidebar && backdrop) {
+      toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('show');
+        backdrop.classList.toggle('show');
+      });
+      backdrop.addEventListener('click', () => {
+        sidebar.classList.remove('show');
+        backdrop.classList.remove('show');
+      });
+    }
+  </script>
+</body>
+</html>

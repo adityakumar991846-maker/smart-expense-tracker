@@ -1,0 +1,66 @@
+/**
+ * Dashboard Component Styles
+ */
+.metric-card {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.metric-value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.metric-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.metric-icon-box.primary {
+  background-color: var(--primary-subtle);
+  color: var(--primary-color);
+}
+
+.metric-icon-box.success {
+  background-color: var(--success-subtle);
+  color: var(--success-color);
+}
+
+.metric-icon-box.warning {
+  background-color: #fef3c7;
+  color: var(--warning-color);
+}
+
+.metric-icon-box.danger {
+  background-color: var(--danger-subtle);
+  color: var(--danger-color);
+}
+
+.category-icon-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

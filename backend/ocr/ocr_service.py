@@ -241,24 +241,36 @@ class OcrService:
 
     @staticmethod
     def _extract_top_center_amount(image):
-        """Use the prominent top-center amount area when full-page OCR misses it."""
+        """Read the prominent payment amount area when full-page OCR misses it."""
         width, height = image.size
-        amount_region = image.crop((
-            int(width * 0.24),
-            int(height * 0.196),
-            int(width * 0.76),
-            int(height * 0.28),
-        ))
-        amount_region = ImageEnhance.Contrast(amount_region).enhance(2)
-        text = pytesseract.image_to_string(amount_region, config=r'--oem 3 --psm 6').strip()
-        # Tesseract can render the rupee glyph as "=" while preserving the digits.
-        text = re.sub(r'^=+\s*', '', text)
-        amount_match = re.fullmatch(
-            r'(?:₹|Rs\.?|INR)?\s*((?:\d{1,3}(?:,\d{2,3})+|\d{1,10})(?:\.\d{1,2})?)',
-            text,
-            re.IGNORECASE,
+        amount_regions = (
+            (0.24, 0.196, 0.76, 0.28),
+            (0.30, 0.18, 0.70, 0.31),
         )
-        return amount_match.group(1).replace(',', '') if amount_match else None
+        amount_pattern = (
+            r'(?:₹|Rs\.?|INR)?\s*'
+            r'((?:\d{1,3}(?:,\d{2,3})+|\d{1,10})(?:\.\d{1,2})?)'
+        )
+
+        for left, top, right, bottom in amount_regions:
+            amount_region = image.crop((
+                int(width * left),
+                int(height * top),
+                int(width * right),
+                int(height * bottom),
+            ))
+            amount_region = ImageEnhance.Contrast(amount_region).enhance(2)
+            text = pytesseract.image_to_string(
+                amount_region,
+                config=r'--oem 3 --psm 6',
+            ).strip()
+            # Tesseract can render the rupee glyph as "=" while preserving the digits.
+            text = re.sub(r'^=+\s*', '', text)
+            amount_match = re.fullmatch(amount_pattern, text, re.IGNORECASE)
+            if amount_match:
+                return amount_match.group(1).replace(',', '')
+
+        return None
 
     @classmethod
     def parse_transaction_data(cls, text):

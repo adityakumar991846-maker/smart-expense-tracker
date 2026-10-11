@@ -44,6 +44,17 @@ CICAgNjFz_DOCA
 G Pay
 """
 
+    ALTERNATE_LAYOUT_OCR_TEXT = """
+To: Recipient
+Completed
+9 Oct 2026, 11:06 am
+Punjab National Bank
+UPI transaction ID
+123456789012
+Google transaction ID
+CICAgPiGrl2ZDQ
+"""
+
     PAWAN_MOBILE_OCR_TEXT = """
 To PAWAN MOBILE
 Completed
@@ -101,6 +112,34 @@ G Pay
         self.assertNotEqual(parsed['amount'], 7623.00)
         self.assertEqual(parsed['upi_transaction_id'], "124819348086")
         self.assertEqual(mock_ocr.call_count, 2)
+
+    @patch('ocr.ocr_service.pytesseract.image_to_string')
+    def test_alternate_top_amount_position_is_recognized(self, mock_ocr):
+        mock_ocr.side_effect = [
+            self.ALTERNATE_LAYOUT_OCR_TEXT,
+            "To Recipient\nPayment button",
+            "2,225",
+        ]
+        image_buffer = io.BytesIO()
+        Image.new('RGB', (540, 1352), color=(255, 255, 255)).save(
+            image_buffer,
+            format='JPEG',
+        )
+        upload = SimpleUploadedFile(
+            "alternate-layout-receipt.jpg",
+            image_buffer.getvalue(),
+            content_type="image/jpeg",
+        )
+
+        text, error = OcrService.extract_text_from_image(upload)
+
+        self.assertIsNone(error)
+        self.assertIn("Payment amount: 2225", text)
+        parsed = OcrService.parse_transaction_data(text)
+        self.assertEqual(Decimal(str(parsed['amount'])), Decimal("2225.00"))
+        self.assertEqual(parsed['merchant_name'], "Recipient")
+        self.assertEqual(parsed['upi_transaction_id'], "123456789012")
+        self.assertEqual(mock_ocr.call_count, 3)
 
     def test_pawan_mobile_receipt_extracts_payment_of_amount(self):
         parsed = OcrService.parse_transaction_data(self.PAWAN_MOBILE_OCR_TEXT)

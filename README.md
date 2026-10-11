@@ -254,7 +254,82 @@ Register an account, sign in, and begin adding expenses or scanning payment scre
 
 Authentication and request formats depend on the endpoint configuration. Consult the backend code for exact request and response schemas.
 
-## 7. Automated Testing
+## 7. Production Deployment (Render)
+
+The repository includes a Render Blueprint in `render.yaml`, a production Django
+image in `backend/Dockerfile`, and a static frontend packaging script in
+`frontend/build-config.mjs`. The frontend uses `/api` locally, through the
+unchanged Vite proxy; the static deployment build injects the public Django API
+origin into the generated frontend without placing secrets in browser code.
+
+The Blueprint provisions a Render web service and a static site. It does **not**
+provision MySQL: create an external MySQL 8-compatible database first. Render's
+web service must be able to reach that database. Use a dedicated least-privilege
+database user, TLS where supported, and provider-managed backups. The Blueprint
+also requests a 1 GB persistent disk for uploaded receipt media; Render's
+`starter` web plan and persistent disk may incur charges. Review current pricing
+and database-provider costs before deploying.
+
+### Configure environment variables
+
+Set these in the Render service environment, not in source control:
+
+| Variable | Backend (Django) | Frontend build |
+|---|---|---|
+| `SECRET_KEY` | Required; generate a new secret for production. Never reuse the development key. | — |
+| `DEBUG` | `False` | — |
+| `ALLOWED_HOSTS` | Django API hostname only, e.g. `smart-expense-tracker-api.onrender.com` | — |
+| `DB_ENGINE` | `django.db.backends.mysql` | — |
+| `DB_NAME` | Managed MySQL schema name | — |
+| `DB_USER` | Dedicated MySQL username | — |
+| `DB_PASSWORD` | Managed MySQL password | — |
+| `DB_HOST` / `DB_PORT` | Managed MySQL host / port (usually `3306`) | — |
+| `DB_SSL_CA` | Optional path to the provider CA certificate when required | — |
+| `CORS_ALLOWED_ORIGINS` | Exact HTTPS frontend origin, e.g. `https://smart-expense-tracker-frontend.onrender.com` | — |
+| `CSRF_TRUSTED_ORIGINS` | Exact HTTPS frontend origin (include scheme) | — |
+| `SECURE_SSL_REDIRECT` | `True` | — |
+| `MEDIA_ROOT` | `/var/data/media` (configured by the Blueprint for its persistent disk) | — |
+| `TESSERACT_CMD` | `/usr/bin/tesseract` (installed in the backend image) | — |
+| `API_BASE_URL` | — | HTTPS origin of the Django service, e.g. `https://smart-expense-tracker-api.onrender.com` (no `/api` suffix) |
+
+Replace example hostnames with the actual Render service URLs if Render assigns
+different ones. The backend rejects a missing `SECRET_KEY` when `DEBUG=False`.
+Generate it locally with Django's
+`get_random_secret_key()` helper and paste it directly into the private Render
+environment settings; do not add it to `.env.example`, `render.yaml`, or Git.
+Use `DB_SSL_CA` only when the database provider requires a CA file and make that
+file available at the configured path without committing private credentials.
+
+### Deployment steps
+
+1. Create the external MySQL database/schema and least-privilege user. Confirm
+   network access from Render and obtain the host, port, and any required TLS CA.
+2. Connect the GitHub repository to Render as a Blueprint. Before deploying,
+   populate the `sync: false` variables above in the respective service
+   dashboards, using the exact frontend/backend origins.
+3. Review the paid web plan and persistent disk in `render.yaml`. The backend
+   runs `python manage.py migrate --noinput` as its pre-deploy command; it does
+   not reset or delete database data. `collectstatic` is run while building the
+   Docker image, and WhiteNoise serves the collected static assets.
+4. Deploy the frontend and backend. Create an admin account from the backend
+   service shell with `python manage.py createsuperuser` if one is needed.
+5. Verify the frontend URL, sign-up/login, authenticated dashboard and reports,
+   an OCR upload through `/api/ocr/analyze/`, and a user-confirmed expense save.
+   Verify a receipt image upload persists across a backend restart if using
+   `receipt_image`; OCR analysis itself does not save an expense.
+
+The frontend static build command is `node build-config.mjs` from `frontend/`.
+It requires `API_BASE_URL` in production, writes a deploy-only API URL into the
+generated publish directory, and does not change local Vite proxy settings.
+The backend Docker image includes Tesseract and English language data. Django
+uploads are stored on the Blueprint's persistent disk; keep the service at one
+instance unless media storage is moved to shared object storage.
+
+No deployment or remote database operation has been performed as part of this
+preparation. A successful local build is not proof that the live application is
+working; complete the smoke checks above after deployment.
+
+## 8. Automated Testing
 
 Run the OCR tests:
 
@@ -278,7 +353,7 @@ npm run build
 
 Record the actual test counts and results from your current environment before publishing a release. Do not assume that earlier test counts still describe the current code.
 
-## 8. OCR Workflow
+## 9. OCR Workflow
 
 1. The user uploads a payment confirmation screenshot.
 2. Tesseract OCR extracts text locally.
@@ -290,25 +365,25 @@ Record the actual test counts and results from your current environment before p
 
 OCR results can vary with screenshot quality and layout. Always verify the extracted information before confirming an expense.
 
-## 9. Limitations
+## 10. Limitations
 
 - OCR accuracy depends on image quality and receipt layout.
 - Some fields may be unavailable or unreadable on particular receipts.
 - The application does not directly retrieve transactions from a Google Pay or bank account.
 - The application requires a configured backend, database, and local OCR engine.
 
-## 10. Future Improvements
+## 11. Future Improvements
 
 - Improve automatic category suggestions.
 - Add more receipt layouts and OCR regression fixtures.
 - Expand analytics and budget insights.
 - Improve deployment documentation and production security configuration.
 
-## 11. License
+## 12. License
 
 Check the repository's `LICENSE` file for the applicable license terms.
 
-## Author
+## 13. Author
 
 **Aditya Maddheshiya**
 

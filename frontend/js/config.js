@@ -2,7 +2,7 @@
  * Application Configuration & API Endpoints
  */
 const CONFIG = {
-  API_BASE_URL: '/api',
+  API_BASE_URL: window.SMART_EXPENSE_API_BASE_URL || '/api',
   ENDPOINTS: {
     // Auth
     REGISTER: '/auth/register/',

@@ -8,7 +8,7 @@ import os
 import re
 from datetime import datetime
 from decimal import Decimal
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageEnhance
 from django.conf import settings
 import pytesseract
 
@@ -198,7 +198,7 @@ class OcrService:
         Enhances image for Tesseract recognition:
         - Converts to RGB
         - Upscales if narrow
-        - Enhances contrast & sharpens
+        - Converts to grayscale without amplifying OCR noise
         """
         image_file.seek(0)
         img = Image.open(image_file).convert('RGB')
@@ -213,14 +213,7 @@ class OcrService:
         # Grayscale
         gray = img.convert('L')
 
-        # Enhance Contrast
-        enhancer = ImageEnhance.Contrast(gray)
-        enhanced = enhancer.enhance(1.8)
-
-        # Subtle Sharpening
-        sharpened = enhanced.filter(ImageFilter.SHARPEN)
-
-        return sharpened
+        return gray
 
     @classmethod
     def extract_text_from_image(cls, image_file):
@@ -235,11 +228,37 @@ class OcrService:
             if len(text.strip()) < 15:
                 text = pytesseract.image_to_string(processed_img, config=r'--oem 3 --psm 3')
 
+            if cls._extract_amount(text, text.splitlines()) is None:
+                amount_text = cls._extract_top_center_amount(processed_img)
+                if amount_text:
+                    text = f'{text.rstrip()}\nPayment amount: {amount_text}'
+
             return text, None
         except pytesseract.TesseractNotFoundError:
             return None, "Tesseract OCR is not installed or configured on the server."
         except Exception as e:
             return None, "We couldn't read this screenshot. Please upload a clearer payment screenshot."
+
+    @staticmethod
+    def _extract_top_center_amount(image):
+        """Use the prominent top-center amount area when full-page OCR misses it."""
+        width, height = image.size
+        amount_region = image.crop((
+            int(width * 0.24),
+            int(height * 0.196),
+            int(width * 0.76),
+            int(height * 0.28),
+        ))
+        amount_region = ImageEnhance.Contrast(amount_region).enhance(2)
+        text = pytesseract.image_to_string(amount_region, config=r'--oem 3 --psm 6').strip()
+        # Tesseract can render the rupee glyph as "=" while preserving the digits.
+        text = re.sub(r'^=+\s*', '', text)
+        amount_match = re.fullmatch(
+            r'(?:₹|Rs\.?|INR)?\s*((?:\d{1,3}(?:,\d{2,3})+|\d{1,10})(?:\.\d{1,2})?)',
+            text,
+            re.IGNORECASE,
+        )
+        return amount_match.group(1).replace(',', '') if amount_match else None
 
     @classmethod
     def parse_transaction_data(cls, text):
@@ -282,39 +301,70 @@ class OcrService:
 
     @staticmethod
     def _extract_amount(text, lines):
-        """Extracts transaction amount (supports ₹, Rs, INR, Paid)."""
-        # Primary patterns with currency indicators
-        patterns = [
-            r'[₹|Rs\.?|INR]\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})|[0-9]+(?:\.[0-9]{1,2})?)',
-            r'(?:Paid|Amount|Total|Sent)\s*[:\-]?\s*[₹|Rs\.?|INR|8]?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})|[0-9]+(?:\.[0-9]{1,2})?)',
-            r'(?:^|\s)₹\s*([0-9,.]+)',
-        ]
-        for pat in patterns:
-            match = re.search(pat, text, re.IGNORECASE)
-            if match:
-                raw_amt = match.group(1).replace(',', '')
-                try:
-                    val = Decimal(raw_amt)
-                    # Don't mistake a 4-digit calendar year for amount if close to 2020-2030
-                    if 0 < val < 1000000 and not (2020 <= val <= 2035 and re.search(r'\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+' + str(int(val)), text, re.I)):
-                        return val
-                except Exception:
-                    pass
+        """Extracts an amount only when currency or a payment label identifies it."""
+        amount_pattern = r'(?<![\w,])(?:\d{1,3}(?:,\d{2,3})+|\d{1,10})(?:\.\d{1,2})?(?![\w,])'
+        currency_pattern = r'(?<![A-Za-z])(?:₹|Rs\.?|INR)(?![A-Za-z])'
 
-        # Standalone numeric line in short screenshots
-        for line in lines[:8]:
-            clean = line.replace('₹', '').replace('Rs', '').replace(',', '').strip()
-            # If line is e.g. "820" where 8 is misrecognized ₹ and rest is 20
-            if re.match(r'^\d+(\.\d{1,2})?$', clean):
-                try:
-                    val = Decimal(clean)
-                    # Skip if it is likely a 4-digit year
-                    if 2020 <= val <= 2035:
-                        continue
-                    if 0 < val < 1000000:
-                        return val
-                except Exception:
-                    pass
+        def parse_amount(value):
+            match = re.fullmatch(
+                rf'\s*(?:{currency_pattern}\s*)?({amount_pattern})\s*',
+                value,
+                re.IGNORECASE,
+            )
+            if not match:
+                return None
+            amount = Decimal(match.group(1).replace(',', ''))
+            return amount if amount > 0 else None
+
+        def is_currency_only(value):
+            return bool(re.fullmatch(rf'\s*{currency_pattern}\s*', value, re.IGNORECASE))
+
+        label_pattern = re.compile(
+            r'(?<![A-Za-z])(?:payment\s+amount|payment\s+of|amount\s+(?:paid|sent)|amount|paid|sent|total)'
+            r'\b\s*[:\-]?\s*(.*?)\s*$',
+            re.IGNORECASE,
+        )
+
+        for index, line in enumerate(lines):
+            label_match = label_pattern.search(line)
+            if not label_match:
+                continue
+
+            remainder = label_match.group(1)
+            amount = parse_amount(remainder)
+            if amount is not None:
+                return amount
+            amount_with_status = re.fullmatch(
+                rf'\s*(?:{currency_pattern}\s*)?({amount_pattern})'
+                r'\s+(?:completed|successful|successfully|sent)\s*',
+                remainder,
+                re.IGNORECASE,
+            )
+            if amount_with_status:
+                amount = Decimal(amount_with_status.group(1).replace(',', ''))
+                if amount > 0:
+                    return amount
+            if remainder and not is_currency_only(remainder):
+                continue
+
+            for following_line in lines[index + 1:index + 3]:
+                if is_currency_only(following_line):
+                    continue
+                amount = parse_amount(following_line)
+                if amount is not None:
+                    return amount
+                break
+
+        currency_amount = re.search(
+            rf'{currency_pattern}\s*({amount_pattern})',
+            text,
+            re.IGNORECASE,
+        )
+        if currency_amount:
+            amount = Decimal(currency_amount.group(1).replace(',', ''))
+            if amount > 0:
+                return amount
+
         return None
 
     @staticmethod

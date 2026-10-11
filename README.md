@@ -1,207 +1,315 @@
 # Smart Expense Tracker
 
-A modern, full-stack Expense Tracker web application with manual expense tracking and automated receipt extraction from user-uploaded **Google Pay and UPI payment confirmation screenshots** using local Tesseract OCR.
+A full-stack expense management web application built with Django REST Framework, MySQL, JavaScript, and local Tesseract OCR. It supports manual expense tracking and extracting payment details from user-uploaded Google Pay and UPI payment screenshots.
 
-> **Privacy & Security Notice:**
-> **This application does not directly access Google Pay or bank accounts. It reads payment information strictly from screenshots uploaded by the user.** No banking credentials, phone notifications, private APIs, SMS messages, or financial credentials are ever accessed. All OCR processing occurs locally on the server without communicating with external third-party AI or OCR clouds.
-
----
+> **Privacy and Security:** This application does not directly access Google Pay or bank accounts. It processes screenshots uploaded by the user. It does not require banking credentials or direct access to private payment APIs. OCR is performed locally using Tesseract rather than a third-party OCR cloud service.
 
 ## 1. Features
 
-- **Automated Google Pay & UPI Screenshot OCR:**
-  - Extracts transaction Amount, Merchant/Receiver, Date, Time, Payment Status, Payment Method, UPI Transaction ID (12-digit), Google Transaction ID, Bank Name, and UPI ID (VPA).
-  - Intelligent merchant-to-category suggestion (e.g. Swiggy/Zomato → Food, Uber/Ola → Travel, Amazon/Flipkart → Shopping, Airtel/Electricity → Bills).
-  - Review screen before saving: **every single field is fully editable** before confirming.
-- **Accidental Duplicate Detection:**
-  - Prevents double-counting by detecting matching UPI Transaction IDs, Google Transaction IDs, or composite match `(User, Amount, Merchant, Date)`.
-  - Gives users the option to cancel or "Save Anyway".
-- **Complete Expense Management:**
-  - Manual expense creation with date, time, category, payment method, and notes.
-  - Search by merchant or notes with debounce.
-  - Category, payment method, date range, and multi-parameter sorting (newest, oldest, highest/lowest amount).
-  - View detailed transaction metadata modal and delete records.
-  - Strict user-level data isolation (IDOR protection).
-- **Interactive Dashboard & Analytics:**
-  - Financial summary cards: Total Spent, This Month, Today, Transactions Count, Highest Expense.
-  - Monthly spending trend bar chart powered by Chart.js.
-  - Category distribution doughnut chart powered by Chart.js.
-  - Monthly budget limit progress bar with automatic 80% threshold warning alert.
-- **Reports & Data Export:**
-  - Breakdown by Daily, Weekly, Monthly, or Custom Date Range.
-  - Summary metrics: Average Expense, Highest Expense, Total Count, and Total Amount.
-  - Instant **CSV Export** containing only the authenticated user's records.
-- **Robust Security & User Authentication:**
-  - Token-based REST authentication.
-  - Password hashing via Django PBKDF2.
-  - Input validation on both client and backend.
-  - CSRF and CORS configuration.
+### Receipt OCR
+- Extracts payment amount, merchant or receiver, date, time, payment status, payment method, UPI transaction ID, Google transaction ID, bank name, and UPI ID (VPA), where available.
+- Uses local Tesseract OCR with image preprocessing and rule-based parsing.
+- Provides an editable confirmation screen before saving an expense.
+- Handles missing amounts safely by warning the user instead of silently saving an incorrect amount.
+- Suggests expense categories based on merchant information.
 
----
+### Duplicate Detection
+- Checks transaction identifiers and other transaction details for potential duplicates.
+- Helps prevent accidental double-counting.
+- Supports reviewing duplicate warnings before saving.
+
+### Expense Management
+- Add expenses manually or through receipt scanning.
+- Search, filter, sort, view, and delete expenses.
+- Filter by category, payment method, and date range.
+- Keep user expense records isolated through authenticated backend operations.
+
+### Dashboard and Analytics
+- View total spending, monthly spending, today's spending, transaction count, and highest expense.
+- Visualize monthly spending trends and category distribution.
+- Track monthly budget progress and receive threshold warnings.
+
+### Reports and Export
+- Generate daily, weekly, monthly, and custom-period reports.
+- Review average expense, highest expense, transaction count, and total amount.
+- Export authenticated users' expense data to CSV.
+
+### Authentication and Security
+- Token-based REST API authentication.
+- Django password hashing.
+- Input validation on the frontend and backend.
+- Configurable CORS and security settings.
 
 ## 2. Technology Stack
 
-- **Backend:** Python, Django 5.0, Django REST Framework, django-cors-headers, PyMySQL.
-- **Database:** MySQL (with fallback support for local development).
-- **OCR Engine:** Tesseract OCR (v5.3+), `pytesseract`, Pillow (PIL).
-- **Frontend:** HTML5, CSS3, Vanilla JavaScript, Bootstrap 5.3, Bootstrap Icons, Chart.js.
+| Component | Technologies |
+|---|---|
+| Backend | Python, Django, Django REST Framework |
+| Database | MySQL 8.4 |
+| Frontend | HTML5, CSS3, Vanilla JavaScript, Bootstrap 5.3 |
+| Charts | Chart.js |
+| OCR | Tesseract OCR, pytesseract, Pillow |
+| Database connectivity | PyMySQL |
+| API support | Django REST Framework, django-cors-headers |
 
----
+## 3. Project Structure
 
-## 3. Project Directory Structure
-
-```
-.
+```text
+smart-expense-tracker/
 ├── backend/
-│   ├── config/             # Django project settings, WSGI/ASGI, root URLs
-│   ├── accounts/           # User authentication, registration, profiles
-│   ├── categories/         # System default and user-custom categories
-│   ├── expenses/           # Expense models, filtering, search, pagination
-│   ├── dashboard/          # Metric summaries, monthly trends, and CSV reports
-│   ├── ocr/                # Tesseract OCR engine, regex parser, screenshot endpoints
+│   ├── config/
+│   ├── accounts/
+│   ├── categories/
+│   ├── expenses/
+│   ├── dashboard/
+│   ├── ocr/
 │   ├── manage.py
 │   ├── requirements.txt
 │   └── .env.example
 ├── frontend/
-│   ├── index.html          # Authentication router & landing
-│   ├── login.html          # Sign In page
-│   ├── register.html       # Sign Up page
-│   ├── dashboard.html      # Analytics dashboard with Chart.js
-│   ├── expenses.html       # Searchable & filterable expense table with view modal
-│   ├── add-expense.html    # Manual expense entry form
-│   ├── scan-payment.html   # Screenshot dropzone & OCR confirmation interface
-│   ├── reports.html        # Analytics reports & CSV export
-│   ├── profile.html        # Budget setting and password management
-│   ├── css/                # style.css, auth.css, dashboard.css, responsive.css
-│   └── js/                 # api.js, auth.js, ocr.js, dashboard.js, reports.js
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   ├── dashboard.html
+│   ├── expenses.html
+│   ├── add-expense.html
+│   ├── scan-payment.html
+│   ├── reports.html
+│   ├── profile.html
+│   ├── css/
+│   └── js/
+├── package.json
+├── package-lock.json
 └── README.md
 ```
 
----
+## 4. Requirements
 
-## 4. Installation & Setup
+Install the following before setting up the project:
 
-### A. Prerequisites
-1. **Python 3.10+**
-2. **MySQL Server** (or local development database)
-3. **Tesseract OCR**
+- Python 3.10 or a compatible version supported by the project dependencies.
+- MySQL Server.
+- Node.js and npm.
+- Tesseract OCR.
 
-#### Installing Tesseract OCR:
-- **Ubuntu/Debian:**
-  ```bash
-  sudo apt-get update
-  sudo apt-get install -y tesseract-ocr tesseract-ocr-eng
-  ```
-- **macOS:**
-  ```bash
-  brew install tesseract
-  ```
-- **Windows:**
-  - Download and run the installer from: [UB-Mannheim Tesseract Releases](https://github.com/UB-Mannheim/tesseract/wiki).
-  - Default installation path: `C:\Program Files\Tesseract-OCR\tesseract.exe`.
-  - Add `C:\Program Files\Tesseract-OCR` to your Windows System `PATH` or set `TESSERACT_CMD` in your `.env` file:
-    ```env
-    TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
-    ```
+### Install Tesseract OCR
 
----
+**Windows**
 
-### B. Backend Setup
-1. Create and activate a Python virtual environment:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate   # On Windows: venv\Scripts\activate
-   ```
+Install Tesseract using the [UB Mannheim Tesseract releases](https://github.com/UB-Mannheim/tesseract/wiki).
 
-2. Install dependencies:
-   ```bash
-   pip install -r backend/requirements.txt
-   ```
+The usual executable path is:
 
-3. Configure Environment Variables:
-   Copy `.env.example` to `.env` in the `backend/` directory:
-   ```bash
-   cp backend/.env.example backend/.env
-   ```
+```text
+C:\Program Files\Tesseract-OCR\tesseract.exe
+```
 
-   Configure MySQL connection in `backend/.env`:
-   ```env
-   SECRET_KEY=your-secure-django-secret-key
-   DEBUG=True
-   ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+Add its installation directory to your Windows PATH, or configure `TESSERACT_CMD` if supported by your project settings.
 
-   DB_ENGINE=django.db.backends.mysql
-   DB_NAME=smart_expense_tracker
-   DB_USER=root
-   DB_PASSWORD=your_mysql_password
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
+**Ubuntu/Debian**
 
-   TESSERACT_CMD=tesseract
-   ```
+```bash
+sudo apt-get update
+sudo apt-get install -y tesseract-ocr tesseract-ocr-eng
+```
 
-4. Create MySQL database:
-   ```sql
-   CREATE DATABASE smart_expense_tracker CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   ```
+**macOS**
 
-5. Run Migrations:
-   ```bash
-   python backend/manage.py makemigrations
-   python backend/manage.py migrate
-   ```
+```bash
+brew install tesseract
+```
 
-6. Start Django Server:
-   ```bash
-   python backend/manage.py runserver 127.0.0.1:8008
-   ```
+## 5. Installation and Setup
 
----
+Run commands from the project root unless otherwise specified.
 
-### C. Frontend Setup
-The frontend is built with clean vanilla JavaScript and HTML5.
-When running with the dev server proxy or a static web server:
-- Open `http://localhost:3000/frontend/login.html` (or `http://localhost:3000/`).
-- Sign up for a new account.
-- Sign in to explore the dashboard.
+### A. Clone the repository
 
----
+```bash
+git clone https://github.com/adityakumar991846-maker/smart-expense-tracker.git
+cd smart-expense-tracker
+```
 
-## 5. API Documentation
+If your downloaded repository contains an additional nested `smart-expense-tracker` directory, enter the directory that contains `backend/manage.py` and `package.json`.
 
-| Method | Endpoint | Description |
+### B. Set up the Python environment
+
+Create a virtual environment:
+
+```bash
+python -m venv .venv
+```
+
+Activate it on Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+On Windows Command Prompt:
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
+Install backend dependencies:
+
+```bash
+python -m pip install -r backend/requirements.txt
+```
+
+### C. Configure environment variables
+
+Create `backend/.env` by copying `backend/.env.example`. On Windows PowerShell:
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+```
+
+Edit `backend/.env` and configure the values required by your `backend/config/settings.py`:
+
+```env
+DB_ENGINE=django.db.backends.mysql
+DB_NAME=smart_expense_tracker
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_HOST=127.0.0.1
+DB_PORT=3306
+```
+
+Replace the example password with your own local MySQL password. Configure any other required settings from `.env.example`.
+
+**Security:** Never commit `.env` files, database passwords, Django secret keys, or API credentials to GitHub. Keep local secrets excluded by `.gitignore`.
+
+### D. Create the MySQL database
+
+Connect to MySQL and run:
+
+```sql
+CREATE DATABASE smart_expense_tracker
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+```
+
+If the database already exists, do not recreate or reset it.
+
+### E. Apply migrations
+
+From the project root:
+
+```bash
+python backend/manage.py migrate
+```
+
+Check the Django configuration:
+
+```bash
+python backend/manage.py check
+```
+
+### F. Start the backend
+
+```bash
+python backend/manage.py runserver 127.0.0.1:8008
+```
+
+Keep this terminal open.
+
+### G. Install and start the frontend
+
+Open a second terminal at the project root:
+
+```bash
+npm install
+npm run dev
+```
+
+Open the URL printed by Vite. In the current development setup, the expected URL is:
+
+http://127.0.0.1:3000/
+
+If Vite selects another port, use the URL shown in the terminal.
+
+Register an account, sign in, and begin adding expenses or scanning payment screenshots.
+
+## 6. API Overview
+
+| Method | Endpoint | Purpose |
 |---|---|---|
-| `POST` | `/api/auth/register/` | Register new user account |
-| `POST` | `/api/auth/login/` | Log in with email & password, returns Token |
-| `POST` | `/api/auth/logout/` | Invalidate current user session |
-| `GET` / `PUT` | `/api/auth/profile/` | Retrieve or update user budget & profile |
-| `POST` | `/api/auth/change-password/` | Change account password |
-| `GET` | `/api/categories/` | List default & custom categories |
-| `POST` | `/api/categories/` | Create a new custom category |
-| `GET` | `/api/expenses/` | Filter, search, sort, and paginate expenses |
-| `POST` | `/api/expenses/` | Create a manual expense |
-| `GET` / `PUT` / `DELETE` | `/api/expenses/<id>/` | Retrieve, update, or delete specific expense |
-| `POST` | `/api/expenses/check-duplicate/` | Check duplicate transaction identifiers |
-| `POST` | `/api/ocr/analyze/` | Upload screenshot & extract transaction JSON |
-| `POST` | `/api/ocr/confirm/` | Confirm, validate, and save OCR transaction |
-| `GET` | `/api/dashboard/summary/` | Overview metrics, budget status, recent expenses |
-| `GET` | `/api/dashboard/category-summary/` | Category spending aggregations |
-| `GET` | `/api/dashboard/monthly-summary/` | 6-month spending trends |
-| `GET` | `/api/reports/` | Period report or CSV export (`?export=csv`) |
+| POST | `/api/auth/register/` | Register a user |
+| POST | `/api/auth/login/` | Authenticate a user |
+| POST | `/api/auth/logout/` | Log out |
+| GET / PUT | `/api/auth/profile/` | View or update profile |
+| POST | `/api/auth/change-password/` | Change password |
+| GET / POST | `/api/categories/` | List or create categories |
+| GET / POST | `/api/expenses/` | List or create expenses |
+| GET / PUT / DELETE | `/api/expenses/<id>/` | Retrieve, update, or delete an expense |
+| POST | `/api/expenses/check-duplicate/` | Check for potential duplicates |
+| POST | `/api/ocr/analyze/` | Analyze an uploaded payment screenshot |
+| POST | `/api/ocr/confirm/` | Validate and save a confirmed OCR transaction |
+| GET | `/api/dashboard/summary/` | Retrieve dashboard summary |
+| GET | `/api/dashboard/category-summary/` | Retrieve category totals |
+| GET | `/api/dashboard/monthly-summary/` | Retrieve monthly totals |
+| GET | `/api/reports/` | Generate expense reports |
 
----
+Authentication and request formats depend on the endpoint configuration. Consult the backend code for exact request and response schemas.
 
-## 6. Automated Testing
+## 7. Automated Testing
 
-To run the complete automated test suite (19 tests covering authentication, user isolation, IDOR prevention, expense CRUD, OCR parsing, duplicate checks, budget warnings, and CSV export):
+Run the OCR tests:
+
+```bash
+python backend/manage.py test ocr --verbosity 1
+```
+
+Run the broader test suite:
 
 ```bash
 python backend/manage.py test accounts expenses dashboard ocr
 ```
 
-Output:
+The OCR regression tests include cases for payment amount extraction, missing amounts, and avoiding confusion between payment amounts and account suffixes.
+
+Run the frontend build:
+
+```bash
+npm run build
 ```
-Ran 19 tests in 10.573s
-OK
-System check identified no issues (0 silenced).
-```
+
+Record the actual test counts and results from your current environment before publishing a release. Do not assume that earlier test counts still describe the current code.
+
+## 8. OCR Workflow
+
+1. The user uploads a payment confirmation screenshot.
+2. Tesseract OCR extracts text locally.
+3. The backend parser identifies available payment details.
+4. The confirmation screen displays extracted fields for review and editing.
+5. Missing or invalid amounts must be resolved before submission.
+6. The user confirms the details.
+7. The backend validates the transaction and checks for potential duplicates before saving.
+
+OCR results can vary with screenshot quality and layout. Always verify the extracted information before confirming an expense.
+
+## 9. Limitations
+
+- OCR accuracy depends on image quality and receipt layout.
+- Some fields may be unavailable or unreadable on particular receipts.
+- The application does not directly retrieve transactions from a Google Pay or bank account.
+- The application requires a configured backend, database, and local OCR engine.
+
+## 10. Future Improvements
+
+- Improve automatic category suggestions.
+- Add more receipt layouts and OCR regression fixtures.
+- Expand analytics and budget insights.
+- Improve deployment documentation and production security configuration.
+
+## 11. License
+
+Check the repository's `LICENSE` file for the applicable license terms.
+
+## Author
+
+**Aditya Maddheshiya**
+
+GitHub: [adityakumar991846-maker](https://github.com/adityakumar991846-maker)

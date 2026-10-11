@@ -171,7 +171,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   function displayOcrResult(data, duplicateWarning) {
     resultArea.classList.remove('d-none');
 
-    document.getElementById('ocrAmount').value = data.amount !== null ? data.amount : '';
+    const amountInput = document.getElementById('ocrAmount');
+    const amount = Number(data.amount);
+    const hasValidAmount = data.amount !== null
+      && data.amount !== undefined
+      && Number.isFinite(amount)
+      && amount > 0;
+    amountInput.value = hasValidAmount ? String(amount) : '';
+    if (hasValidAmount) {
+      Common.clearAlert('ocrConfirmAlert');
+    } else {
+      Common.showAlert(
+        'ocrConfirmAlert',
+        'Amount could not be detected. Please enter the amount before saving this expense.',
+      );
+    }
     document.getElementById('ocrMerchant').value = data.merchant_name || '';
     document.getElementById('ocrDate').value = data.transaction_date || new Date().toISOString().split('T')[0];
     document.getElementById('ocrTime').value = data.transaction_time || '';
